@@ -115,43 +115,63 @@
 
 // Get and display image
 - (void)displayImage {
-	if (_photo && _photoImageView.image == nil) {
-		
-		// Reset
-		self.maximumZoomScale = 1;
-		self.minimumZoomScale = 1;
-		self.zoomScale = 1;
-		self.contentSize = CGSizeMake(0, 0);
-		
-		// Get image from browser as it handles ordering of fetching
-		UIImage *img = [_photoBrowser imageForPhoto:_photo];
-		if (img) {
-			
-			// Hide indicator
-			[self hideLoadingIndicator];
-			
-			// Set image
-			_photoImageView.image = img;
-			_photoImageView.hidden = NO;
-			
-			// Setup photo frame
-			CGRect photoImageViewFrame;
-			photoImageViewFrame.origin = CGPointZero;
-			photoImageViewFrame.size = img.size;
-			_photoImageView.frame = photoImageViewFrame;
-			self.contentSize = photoImageViewFrame.size;
-
-			// Set zoom to minimum zoom
-			[self setMaxMinZoomScalesForCurrentBounds];
-			
-		} else {
-			
-			// Failed no image
+    if (_photo /*&& _photoImageView.image == nil*/) {
+        
+        CGSize currentImageSize = _photoImageView.image ? _photoImageView.image.size : CGSizeZero;
+        
+        
+        CGFloat visibleWidth = self.bounds.size.width / self.zoomScale;
+        CGPoint visibleTopLeft = CGPointMake(self.bounds.origin.x / self.zoomScale, self.bounds.origin.y / self.zoomScale);
+        CGFloat lastImageWidth = _photoImageView.image.size.width;
+        
+        // Reset
+        self.maximumZoomScale = 1;
+        self.minimumZoomScale = 1;
+        self.zoomScale = 1;
+        self.contentSize = CGSizeMake(0, 0);
+        
+        // Get image from browser as it handles ordering of fetching
+        UIImage *img = [_photoBrowser imageForPhoto:_photo];
+        
+        if (img) {
+            // Hide indicator
+            [self hideLoadingIndicator];
+            
+            // Set image
+            _photoImageView.image = img;
+            _photoImageView.hidden = NO;
+            
+            // Setup photo frame
+            CGRect photoImageViewFrame;
+            photoImageViewFrame.origin = CGPointZero;
+            photoImageViewFrame.size = img.size;
+            _photoImageView.frame = photoImageViewFrame;
+            self.contentSize = photoImageViewFrame.size;
+            
+            // Set zoom to minimum zoom
+            [self setMaxMinZoomScalesForCurrentBounds];
+            
+            if(!CGSizeEqualToSize(CGSizeZero, currentImageSize) && !CGSizeEqualToSize(currentImageSize, img.size)){
+                CGFloat scale = img.size.width / lastImageWidth;
+                CGFloat neededVisibleWidth = visibleWidth * scale;
+                CGFloat calculatedZoomScale = self.bounds.size.width / neededVisibleWidth;
+                CGPoint neededTopLeft = CGPointMake(visibleTopLeft.x * scale, visibleTopLeft.y * scale);
+                self.zoomScale = calculatedZoomScale;
+                self.bounds = CGRectMake(neededTopLeft.x * self.zoomScale, neededTopLeft.y * self.zoomScale, CGRectGetWidth(self.bounds), CGRectGetHeight(self.bounds));
+                if(ABS(calculatedZoomScale - self.minimumZoomScale) < 0.001){
+                    self.scrollEnabled = NO;
+                }else{
+                    self.scrollEnabled = YES;
+                }
+            }
+        } else {
+            
+            // Failed no image
             [self displayImageFailure];
-			
-		}
-		[self setNeedsLayout];
-	}
+            
+        }
+        [self setNeedsLayout];
+    }
 }
 
 // Image failed so just show black!
