@@ -122,7 +122,11 @@
     if (_photo /*&& _photoImageView.image == nil*/) {
         
         CGSize currentImageSize = _photoImageView.image ? _photoImageView.image.size : CGSizeZero;
-        
+        // Get image from browser as it handles ordering of fetching
+        UIImage *img = [_photoBrowser imageForPhoto:_photo];
+        if(!CGSizeEqualToSize(CGSizeZero, currentImageSize) && img && CGSizeEqualToSize(img.size, currentImageSize)){
+            return;
+        }
         
         CGFloat visibleWidth = self.bounds.size.width / self.zoomScale;
         CGPoint visibleTopLeft = CGPointMake(self.bounds.origin.x / self.zoomScale, self.bounds.origin.y / self.zoomScale);
@@ -133,9 +137,6 @@
         self.minimumZoomScale = 1;
         self.zoomScale = 1;
         self.contentSize = CGSizeMake(0, 0);
-        
-        // Get image from browser as it handles ordering of fetching
-        UIImage *img = [_photoBrowser imageForPhoto:_photo];
         
         if (img) {
             // Hide indicator
